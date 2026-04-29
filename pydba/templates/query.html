@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ database }} – SQL Query{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('main.databases') }}">Databases</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('main.tables', database=database) }}">{{ database }}</a></li>
+    <li class="breadcrumb-item active">SQL Query</li>
+  </ol>
+</nav>
+
+<h5 class="mb-3"><i class="bi bi-terminal me-2 text-dark"></i>SQL Query – <em>{{ database }}</em></h5>
+
+<form method="post" action="{{ url_for('main.query', database=database) }}" class="mb-4">
+  <div class="mb-2">
+    <textarea name="sql" id="sql-editor" class="form-control font-monospace small"
+              rows="8" placeholder="SELECT * FROM your_table LIMIT 100;"
+              spellcheck="false">{{ sql }}</textarea>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-play-fill me-1"></i>Execute
+    </button>
+    <button type="button" class="btn btn-outline-secondary" onclick="clearEditor()">
+      <i class="bi bi-x-circle me-1"></i>Clear
+    </button>
+    <div class="ms-auto">
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button"
+                data-bs-toggle="dropdown">
+          <i class="bi bi-lightbulb me-1"></i>Snippets
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item small font-monospace" href="#"
+                 onclick="setSQL('SHOW TABLES'); return false;">SHOW TABLES</a></li>
+          <li><a class="dropdown-item small font-monospace" href="#"
+                 onclick="setSQL('SHOW FULL COLUMNS FROM `table_name`'); return false;">SHOW COLUMNS</a></li>
+          <li><a class="dropdown-item small font-monospace" href="#"
+                 onclick="setSQL('SELECT * FROM `table_name` LIMIT 100'); return false;">SELECT * LIMIT 100</a></li>
+          <li><a class="dropdown-item small font-monospace" href="#"
+                 onclick="setSQL('SELECT COUNT(*) FROM `table_name`'); return false;">COUNT(*)</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item small font-monospace" href="#"
+                 onclick="setSQL('EXPLAIN SELECT * FROM `table_name` WHERE id = 1'); return false;">EXPLAIN</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</form>
+
+{# Results #}
+{% if result is not none %}
+  {% if result.error %}
+    <div class="alert alert-danger">
+      <strong><i class="bi bi-exclamation-triangle me-1"></i>Error:</strong>
+      <pre class="mb-0 mt-1 small">{{ result.error }}</pre>
+    </div>
+  {% elif result.columns %}
+    <div class="d-flex align-items-center mb-2">
+      <span class="badge bg-success me-2">{{ result.rowcount }} row(s)</span>
+      {% if result.truncated %}
+      <span class="badge bg-warning text-dark">Results truncated – showing first {{ result.rowcount }} rows</span>
+      {% endif %}
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered table-hover small">
+        <thead class="table-dark">
+          <tr>
+            {% for col in result.columns %}<th>{{ col }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in result.rows %}
+          <tr>
+            {% for val in row %}
+            <td class="text-truncate" style="max-width:200px" title="{{ val }}">
+              {% if val is none %}<span class="text-muted fst-italic">NULL</span>
+              {% else %}{{ val }}{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-1"></i>
+      Query OK – {{ result.rowcount }} row(s) affected.
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function clearEditor() {
+  document.getElementById('sql-editor').value = '';
+  document.getElementById('sql-editor').focus();
+}
+function setSQL(sql) {
+  document.getElementById('sql-editor').value = sql;
+  document.getElementById('sql-editor').focus();
+}
+// Ctrl+Enter / Cmd+Enter submits the form
+document.getElementById('sql-editor').addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    this.closest('form').submit();
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Connect{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-plug me-2"></i>Connect to a Database Server</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('auth.login') }}">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Database Type</label>
+            <div class="d-flex gap-3">
+              {% for val, label in [('mysql','MySQL / MariaDB'), ('postgresql','PostgreSQL'), ('sqlite','SQLite')] %}
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="db_type" id="db_{{ val }}"
+                       value="{{ val }}" {% if (form.get('db_type') or 'mysql') == val %}checked{% endif %}
+                       onchange="toggleFields()">
+                <label class="form-check-label" for="db_{{ val }}">{{ label }}</label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div id="network-fields">
+            <div class="row mb-3">
+              <div class="col-8">
+                <label for="host" class="form-label">Host</label>
+                <input type="text" class="form-control" id="host" name="host"
+                       value="{{ form.get('host', 'localhost') }}" placeholder="localhost">
+              </div>
+              <div class="col-4">
+                <label for="port" class="form-label">Port</label>
+                <input type="number" class="form-control" id="port" name="port"
+                       value="{{ form.get('port', 3306) }}" min="1" max="65535">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="username" class="form-label">Username</label>
+              <input type="text" class="form-control" id="username" name="username"
+                     value="{{ form.get('username', '') }}" autocomplete="username">
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password" name="password"
+                     autocomplete="current-password">
+            </div>
+          </div>
+
+          <div id="sqlite-fields" style="display:none">
+            <div class="mb-3">
+              <label for="database" class="form-label">SQLite file path</label>
+              <input type="text" class="form-control" id="database" name="database"
+                     value="{{ form.get('database', '') }}" placeholder="/path/to/db.sqlite3">
+              <div class="form-text">Leave blank to use an in-memory database.</div>
+            </div>
+          </div>
+
+          <div id="dbname-field">
+            <div class="mb-3">
+              <label for="dbname" class="form-label">Database <span class="text-muted">(optional)</span></label>
+              <input type="text" class="form-control" id="dbname" name="database"
+                     value="{{ form.get('database', '') }}" placeholder="Connect to a specific database">
+            </div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-plug-fill me-1"></i>Connect
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleFields() {
+  const type = document.querySelector('input[name="db_type"]:checked').value;
+  const net = document.getElementById('network-fields');
+  const sqlite = document.getElementById('sqlite-fields');
+  const dbname = document.getElementById('dbname-field');
+  const portInput = document.getElementById('port');
+
+  if (type === 'sqlite') {
+    net.style.display = 'none';
+    sqlite.style.display = '';
+    dbname.style.display = 'none';
+  } else {
+    net.style.display = '';
+    sqlite.style.display = 'none';
+    dbname.style.display = '';
+    portInput.value = type === 'postgresql' ? 5432 : 3306;
+  }
+}
+// Run on page load to set correct initial state
+toggleFields();
+</script>
+{% endblock %}

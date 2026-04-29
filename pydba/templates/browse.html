@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ database }}.{{ table }} – Browse{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('main.databases') }}">Databases</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('main.tables', database=database) }}">{{ database }}</a></li>
+    <li class="breadcrumb-item active">{{ table }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h5 class="mb-0">
+    <i class="bi bi-eye me-2 text-primary"></i>Browse – <code>{{ table }}</code>
+    <span class="badge bg-secondary ms-2 small fw-normal">{{ total_rows }} rows</span>
+  </h5>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('main.structure', database=database, table=table) }}"
+       class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-list-columns me-1"></i>Structure
+    </a>
+    <a href="{{ url_for('main.query', database=database) }}"
+       class="btn btn-sm btn-outline-dark">
+      <i class="bi bi-terminal me-1"></i>SQL
+    </a>
+  </div>
+</div>
+
+{# Pagination bar (top) #}
+{% if total_pages > 1 %}
+<div class="d-flex align-items-center gap-2 mb-2 small">
+  {% if page > 1 %}
+    <a href="{{ url_for('main.browse', database=database, table=table, page=page-1) }}"
+       class="btn btn-sm btn-outline-primary">&laquo; Prev</a>
+  {% endif %}
+  <span class="text-muted">Page {{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}
+    <a href="{{ url_for('main.browse', database=database, table=table, page=page+1) }}"
+       class="btn btn-sm btn-outline-primary">Next &raquo;</a>
+  {% endif %}
+  <span class="text-muted ms-auto">Showing rows {{ (page-1)*page_size+1 }}–{{ [page*page_size, total_rows]|min }}</span>
+</div>
+{% endif %}
+
+<div class="table-responsive">
+  <table class="table table-sm table-hover table-bordered align-middle small">
+    <thead class="table-dark">
+      <tr>
+        <th class="text-center text-muted" style="width:40px">#</th>
+        {% for col in columns %}
+        <th>{{ col }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td class="text-muted text-center">{{ (page-1)*page_size + loop.index }}</td>
+        {% for val in row %}
+        <td class="text-truncate" style="max-width:200px" title="{{ val }}">
+          {% if val is none %}
+            <span class="text-muted fst-italic">NULL</span>
+          {% else %}
+            {{ val }}
+          {% endif %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% else %}
+      <tr><td colspan="{{ columns|length + 1 }}" class="text-center text-muted">No rows.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# Pagination bar (bottom) #}
+{% if total_pages > 1 %}
+<div class="d-flex align-items-center gap-2 mt-2 small">
+  {% if page > 1 %}
+    <a href="{{ url_for('main.browse', database=database, table=table, page=page-1) }}"
+       class="btn btn-sm btn-outline-primary">&laquo; Prev</a>
+  {% endif %}
+  <span class="text-muted">Page {{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}
+    <a href="{{ url_for('main.browse', database=database, table=table, page=page+1) }}"
+       class="btn btn-sm btn-outline-primary">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
