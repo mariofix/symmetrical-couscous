@@ -52,9 +52,9 @@ def _default_port(db_type: str) -> int:
 # Identifier validation
 # ---------------------------------------------------------------------------
 
-# Allow only names that contain word characters, dollar signs, and hyphens.
-# This covers all real-world table/database names while blocking injection.
-_IDENT_RE = re.compile(r"^[\w$][\w$\-]*$", re.UNICODE)
+# Allow only names that contain word characters and dollar signs.
+# This is the standard set for SQL identifiers across MySQL, PostgreSQL and SQLite.
+_IDENT_RE = re.compile(r"^[\w$]+$", re.UNICODE)
 
 
 def _validate_identifier(name: str) -> str:
@@ -66,6 +66,15 @@ def _validate_identifier(name: str) -> str:
     if not _IDENT_RE.match(name):
         raise ValueError(f"Invalid SQL identifier: {name!r}")
     return name
+
+
+def _quote_ident(engine: Engine, name: str) -> str:
+    """Return *name* quoted with the correct delimiter for *engine*'s dialect.
+
+    For example: backticks on MySQL, double-quotes on PostgreSQL/SQLite.
+    Always call ``_validate_identifier`` on *name* before this function.
+    """
+    return engine.dialect.identifier_preparer.quote(name)
 
 
 # ---------------------------------------------------------------------------
@@ -187,7 +196,13 @@ def browse_table(
 def execute_query(
     engine: Engine, sql: str, max_rows: int = 1000
 ) -> dict[str, Any]:
-    """Execute *sql* and return a result dict with columns, rows, rowcount, error."""
+    """Execute *sql* and return a result dict with columns, rows, rowcount, error.
+
+    *sql* is user-supplied (from the SQL editor UI) and is intentionally passed
+    through verbatim – this function is the SQL editor back-end, so arbitrary
+    SQL is expected.  Access is gated by the ``login_required`` decorator on the
+    calling route.
+    """
     try:
         with engine.begin() as conn:
             result = conn.execute(text(sql))

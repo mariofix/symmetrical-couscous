@@ -16,6 +16,7 @@ from flask import (
 )
 
 from pydba.db import (
+    _quote_ident,
     _validate_identifier,
     browse_table,
     execute_query,
@@ -195,7 +196,8 @@ def drop_table(database: str, table: str):
 
     engine = make_engine(session["conn_info"], database=database)
     try:
-        result = execute_query(engine, f"DROP TABLE `{table}`")
+        quoted = _quote_ident(engine, table)
+        result = execute_query(engine, f"DROP TABLE {quoted}")
         if result["error"]:
             flash(f"Error dropping table: {result['error']}", "danger")
         else:
@@ -226,7 +228,8 @@ def create_database():
 
     engine = make_engine(session["conn_info"])
     try:
-        result = execute_query(engine, f"CREATE DATABASE `{name}`")
+        quoted = _quote_ident(engine, name)
+        result = execute_query(engine, f"CREATE DATABASE {quoted}")
         if result["error"]:
             flash(f"Error: {result['error']}", "danger")
         else:
@@ -247,7 +250,8 @@ def drop_database(database: str):
 
     engine = make_engine(session["conn_info"])
     try:
-        result = execute_query(engine, f"DROP DATABASE `{database}`")
+        quoted = _quote_ident(engine, database)
+        result = execute_query(engine, f"DROP DATABASE {quoted}")
         if result["error"]:
             flash(f"Error: {result['error']}", "danger")
         else:

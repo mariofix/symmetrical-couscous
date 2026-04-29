@@ -32,6 +32,10 @@ class TestValidateIdentifier:
     def test_valid_name_with_dollar(self):
         assert _validate_identifier("table$name") == "table$name"
 
+    def test_rejects_hyphen(self):
+        with pytest.raises(ValueError, match="Invalid SQL identifier"):
+            _validate_identifier("my-table")
+
     def test_rejects_semicolon_injection(self):
         with pytest.raises(ValueError, match="Invalid SQL identifier"):
             _validate_identifier("users; DROP TABLE users--")
@@ -111,7 +115,12 @@ class TestBuildUrl:
 
 @pytest.fixture()
 def sqlite_engine():
-    """In-memory SQLite engine pre-populated with a test table."""
+    """In-memory SQLite engine pre-populated with a test table.
+
+    Note: The multi-row INSERT syntax used here is SQLite 3.7.11+ compatible.
+    This fixture is intentionally SQLite-only; tests that require a different
+    dialect should create their own engine fixture.
+    """
     engine = create_engine("sqlite:///:memory:", future=True)
     with engine.begin() as conn:
         conn.execute(text(

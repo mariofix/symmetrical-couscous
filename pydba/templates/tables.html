@@ -44,7 +44,7 @@
              class="btn btn-sm btn-outline-secondary me-1" title="Structure">
             <i class="bi bi-list-columns"></i>
           </a>
-          <a href="{{ url_for('main.query', database=database) }}?sql=SELECT+*+FROM+`{{ tbl.name }}`+LIMIT+100"
+          <a href="{{ url_for('main.query', database=database, sql='SELECT * FROM ' ~ tbl.name ~ ' LIMIT 100') }}"
              class="btn btn-sm btn-outline-dark me-1" title="Quick SELECT">
             <i class="bi bi-lightning"></i>
           </a>
