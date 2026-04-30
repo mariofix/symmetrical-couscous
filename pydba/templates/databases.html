@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Databases{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-grid-3x3-gap me-2"></i>Databases</h4>
+  <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#createDbModal">
+    <i class="bi bi-plus-circle me-1"></i>New Database
+  </button>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-hover table-bordered align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Database</th>
+        <th class="text-end" style="width:160px">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for db in databases %}
+      <tr>
+        <td>
+          <a href="{{ url_for('main.tables', database=db) }}" class="fw-semibold text-decoration-none">
+            <i class="bi bi-database me-1 text-primary"></i>{{ db }}
+          </a>
+        </td>
+        <td class="text-end">
+          <a href="{{ url_for('main.tables', database=db) }}"
+             class="btn btn-sm btn-outline-primary me-1" title="Browse tables">
+            <i class="bi bi-table"></i>
+          </a>
+          <a href="{{ url_for('main.query', database=db) }}"
+             class="btn btn-sm btn-outline-secondary me-1" title="Run SQL">
+            <i class="bi bi-terminal"></i>
+          </a>
+          <button class="btn btn-sm btn-outline-danger"
+                  onclick="confirmDrop('{{ db }}')" title="Drop database">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="2" class="text-muted text-center">No databases found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ── Create database modal ── #}
+<div class="modal fade" id="createDbModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('main.create_database') }}" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create New Database</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label" for="new-db-name">Database name</label>
+        <input type="text" class="form-control" id="new-db-name" name="name"
+               required placeholder="my_new_db">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-success">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ── Drop database hidden forms ── #}
+{% for db in databases %}
+<form id="drop-form-{{ loop.index }}" method="post"
+      action="{{ url_for('main.drop_database', database=db) }}" style="display:none"></form>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDrop(dbName) {
+  if (confirm('Are you sure you want to DROP database "' + dbName + '"?\nThis CANNOT be undone.')) {
+    const forms = document.querySelectorAll('[id^="drop-form-"]');
+    const form = Array.from(forms).find(f => f.action.includes('/' + encodeURIComponent(dbName) + '/drop'));
+    if (form) form.submit();
+  }
+}
+</script>
+{% endblock %}
