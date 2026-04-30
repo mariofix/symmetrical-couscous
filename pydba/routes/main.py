@@ -196,6 +196,11 @@ def _json_safe(val):
     return str(val)
 
 
+def _empty_result(error: str) -> dict:
+    """Return a standard empty result dict with an error message."""
+    return {"error": error, "columns": [], "rows": [], "rowcount": 0, "truncated": False}
+
+
 @main_bp.route("/api/query", methods=["POST"])
 @login_required
 def api_query():
@@ -204,15 +209,9 @@ def api_query():
     sql = request.form.get("sql", "").strip()
 
     if not database:
-        return jsonify(
-            {"error": "No database selected.", "columns": [], "rows": [], "rowcount": 0,
-             "truncated": False}
-        )
+        return jsonify(_empty_result("No database selected."))
     if not sql:
-        return jsonify(
-            {"error": "No SQL provided.", "columns": [], "rows": [], "rowcount": 0,
-             "truncated": False}
-        )
+        return jsonify(_empty_result("No SQL provided."))
 
     engine = make_engine(session["conn_info"], database=database)
     try:

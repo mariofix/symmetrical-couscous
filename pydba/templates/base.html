@@ -205,7 +205,7 @@
     if (!sql || !database) return;
 
     executeBtn.disabled = true;
-    executeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Running…';
+    executeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-label="Loading"></span>Running…';
     resultDiv.innerHTML = '';
 
     try {
