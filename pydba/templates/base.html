@@ -65,8 +65,15 @@
 
           {% if sidebar_databases %}
           <li class="nav-item mt-1">
-            <span class="px-3 text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">Switch database</span>
+            <a class="px-3 text-muted d-flex align-items-center justify-content-between text-decoration-none"
+               style="font-size:.7rem;text-transform:uppercase;letter-spacing:.05em"
+               data-bs-toggle="collapse" href="#sidebarDbList" role="button"
+               aria-expanded="{{ 'false' if selected_db else 'true' }}" aria-controls="sidebarDbList">
+              <span>Switch database</span>
+              <i class="bi bi-chevron-down ms-1" style="font-size:.75rem;transition:transform .2s"></i>
+            </a>
           </li>
+          <div class="collapse {% if not selected_db %}show{% endif %}" id="sidebarDbList">
           {% for db in sidebar_databases %}
           <li class="nav-item">
             <a class="nav-link py-1 small {% if db == selected_db %}active fw-bold{% endif %}"
@@ -75,6 +82,7 @@
             </a>
           </li>
           {% endfor %}
+          </div>
           {% endif %}
 
           {# Tables section for selected database #}
