@@ -26,6 +26,8 @@ def index():
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "GET" and "conn_info" in session:
+        return redirect(url_for("main.databases"))
     if request.method == "POST":
         conn_info = {
             "db_type": request.form.get("db_type", "mysql"),

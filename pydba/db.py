@@ -48,6 +48,52 @@ def _default_port(db_type: str) -> int:
     return {"mysql": 3306, "postgresql": 5432}.get(db_type, 3306)
 
 
+def parse_sqlalchemy_url(url: str) -> dict[str, Any]:
+    """Parse a SQLAlchemy URL string into a pydba *conn_info* dict.
+
+    Supports bare schemes (``mysql://``), driver-qualified schemes
+    (``mysql+pymysql://``), and SQLite (``sqlite:///path`` or
+    ``sqlite:///:memory:``).
+
+    Parameters
+    ----------
+    url:
+        A SQLAlchemy-style database URL, e.g.
+        ``postgresql+psycopg2://user:pass@host:5432/dbname`` or
+        ``SQLALCHEMY_DATABASE_URI`` / ``PYDBA_DATABASE_URI`` config values.
+    """
+    from urllib.parse import unquote, urlparse
+
+    parsed = urlparse(url)
+    # Strip optional driver suffix, e.g. "mysql+pymysql" → "mysql"
+    scheme = parsed.scheme.split("+")[0]
+    db_type = scheme if scheme in DRIVER_MAP else "mysql"
+
+    if db_type == "sqlite":
+        # SQLAlchemy uses sqlite:///relative.db or sqlite:////abs/path.db.
+        # urlparse gives path "/relative.db" or "//abs/path.db" respectively.
+        # Stripping exactly one leading slash restores the intended file path.
+        raw_path = parsed.path or "/:memory:"
+        db_path = raw_path[1:] if raw_path.startswith("/") else raw_path
+        return {
+            "db_type": "sqlite",
+            "host": "",
+            "port": 0,
+            "username": "",
+            "password": "",
+            "database": db_path,
+        }
+
+    return {
+        "db_type": db_type,
+        "host": parsed.hostname or "localhost",
+        "port": parsed.port or _default_port(db_type),
+        "username": unquote(parsed.username or ""),
+        "password": unquote(parsed.password or ""),
+        "database": (parsed.path or "").lstrip("/"),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Identifier validation
 # ---------------------------------------------------------------------------
