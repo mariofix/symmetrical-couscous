@@ -13,6 +13,11 @@
   background: #f8f9fa;
 }
 
+/* Rotate chevron when its collapse target is expanded */
+[data-bs-toggle="collapse"][aria-expanded="true"] .bi-chevron-down {
+  transform: rotate(-180deg);
+}
+
 .sidebar .nav-link {
   color: #495057;
   border-radius: .375rem;
