@@ -8,6 +8,7 @@ from flask import (
     Blueprint,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -65,6 +66,7 @@ def databases():
 @main_bp.route("/db/<database>")
 @login_required
 def tables(database: str):
+    session["selected_db"] = database
     engine = make_engine(session["conn_info"], database=database)
     try:
         tbl_names = list_tables(engine)
@@ -96,6 +98,7 @@ def tables(database: str):
 @main_bp.route("/db/<database>/table/<table>/browse")
 @login_required
 def browse(database: str, table: str):
+    session["selected_db"] = database
     page = int(request.args.get("page", 1))
     page_size = current_app.config["PAGE_SIZE"]
 
@@ -132,6 +135,7 @@ def browse(database: str, table: str):
 @main_bp.route("/db/<database>/table/<table>/structure")
 @login_required
 def structure(database: str, table: str):
+    session["selected_db"] = database
     engine = make_engine(session["conn_info"], database=database)
     try:
         columns = get_table_structure(engine, table)
@@ -159,6 +163,7 @@ def structure(database: str, table: str):
 @main_bp.route("/db/<database>/query", methods=["GET", "POST"])
 @login_required
 def query(database: str):
+    session["selected_db"] = database
     sql = ""
     result = None
 
@@ -177,6 +182,46 @@ def query(database: str):
         sql=sql,
         result=result,
     )
+
+
+# ---------------------------------------------------------------------------
+# Modal SQL query – JSON API used by the global SQL modal
+# ---------------------------------------------------------------------------
+
+
+def _json_safe(val):
+    """Convert a DB value to a JSON-serialisable type."""
+    if val is None or isinstance(val, (bool, int, float, str)):
+        return val
+    return str(val)
+
+
+@main_bp.route("/api/query", methods=["POST"])
+@login_required
+def api_query():
+    """Execute SQL for the global modal and return JSON results."""
+    database = request.form.get("database", "").strip()
+    sql = request.form.get("sql", "").strip()
+
+    if not database:
+        return jsonify(
+            {"error": "No database selected.", "columns": [], "rows": [], "rowcount": 0,
+             "truncated": False}
+        )
+    if not sql:
+        return jsonify(
+            {"error": "No SQL provided.", "columns": [], "rows": [], "rowcount": 0,
+             "truncated": False}
+        )
+
+    engine = make_engine(session["conn_info"], database=database)
+    try:
+        result = execute_query(engine, sql, max_rows=current_app.config["MAX_QUERY_ROWS"])
+    finally:
+        engine.dispose()
+
+    result["rows"] = [[_json_safe(v) for v in row] for row in result["rows"]]
+    return jsonify(result)
 
 
 # ---------------------------------------------------------------------------

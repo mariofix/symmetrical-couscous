@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from typing import Any
-from urllib.parse import quote_plus
+from urllib.parse import quote
 
 from sqlalchemy import MetaData, Table, create_engine, func, inspect, select, text
 from sqlalchemy.engine import Engine
@@ -33,8 +33,8 @@ def build_url(conn_info: dict[str, Any]) -> str:
         db_path = conn_info.get("database", ":memory:")
         return f"sqlite:///{db_path}"
 
-    user = quote_plus(conn_info.get("username", ""))
-    password = quote_plus(conn_info.get("password", ""))
+    user = quote(conn_info.get("username", ""), safe="")
+    password = quote(conn_info.get("password", ""), safe="")
     host = conn_info.get("host", "localhost")
     port = conn_info.get("port", _default_port(db_type))
     database = conn_info.get("database", "")
